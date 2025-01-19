@@ -1,0 +1,164 @@
+#!/bin/bash
+
+WORKDIR="/workdir"
+PATCHES_DIR="${WORKDIR}/patches"
+OVERLAY_DIR="${WORKDIR}/overlay"
+
+KERNEL_VERSION=6
+KERNEL_PATCHLEVEL=12
+KERNEL_SUBLEVEL=9
+KERNEL_VERSION_NAME="${KERNEL_VERSION}.${KERNEL_PATCHLEVEL}.${KERNEL_SUBLEVEL}"
+DO_MENUCONFIG="false"
+
+ALPINE_VERSION="3.21"
+ALPINE_ARCH="armhf"
+
+tempdir=$(mktemp -d -t build-XXXXXX)
+rootfs="${tempdir}/rootfs"
+kernel_src="${tempdir}/linux-${KERNEL_VERSION_NAME}"
+esphosted_src="${tempdir}/esphosted"
+alpine_apk="${tempdir}/apk"
+root_uuid="$(uuidgen)"
+
+kernel_fetch() {
+  # Download kernel source
+  mkdir -p "${kernel_src}"
+  wget "https://cdn.kernel.org/pub/linux/kernel/v${KERNEL_VERSION}.x/linux-${KERNEL_VERSION_NAME}.tar.xz" -O "${tempdir}/linux-${KERNEL_VERSION_NAME}.tar.xz"
+  pv "${tempdir}/linux-${KERNEL_VERSION_NAME}.tar.xz" | tar --strip-components=1 -xJC "${kernel_src}"
+}
+
+kernel_patch() {
+  # Apply patches
+  (
+    cd "${kernel_src}"
+    for patchfile in "$PATCHES_DIR"/*.patch; do patch -p1 <"$patchfile"; done
+  )
+}
+
+kernel_build() {
+  # Build kernel
+  cp "${WORKDIR}/defconfig" "${kernel_src}/arch/${ARCH}/configs/build_defconfig"
+  make -C "${kernel_src}" build_defconfig
+  
+  # Run menuconfig if requested
+  if [ "$DO_MENUCONFIG" = "true" ]; then
+    make -C "${kernel_src}" menuconfig
+    make -C "${kernel_src}" savedefconfig
+    cp "${kernel_src}/defconfig" "${WORKDIR}/defconfig-new"
+  fi
+
+  make -C "${kernel_src}" -j"$(nproc)"
+}
+
+kernel_install() {
+  # Install kernel to rootfs
+  mkdir -p "${rootfs}"
+  make -C "${kernel_src}" -j"$(nproc)" targz-pkg
+  pv "${kernel_src}/linux-${KERNEL_VERSION_NAME}-${ARCH}.tar.gz" | tar -C "${rootfs}" -xz
+}
+
+esphosted_fetch() {
+  # Clone ESP hosted repository
+  git clone https://github.com/espressif/esp-hosted.git "${esphosted_src}"
+  (cd "${esphosted_src}"; git checkout b83e0d5dfdd145e0448e3d7c3ac7e7d0b1e953c8)
+}
+
+esphosted_kmod_build() {
+  # Build ESP kernel modules
+  make ARCH="${ARCH}" CROSS_COMPILE="${CROSS_COMPILE}" KERNEL="${kernel_src}" -C "${esphosted_src}/esp_hosted_ng/host" all
+}
+
+esphosted_kmod_install() {
+  # Install ESP kernel modules
+  mkdir -p "${rootfs}"
+  make ARCH="${ARCH}" CROSS_COMPILE="${CROSS_COMPILE}" INSTALL_MOD_PATH="${rootfs}" M="${esphosted_src}/esp_hosted_ng/host" -C "${kernel_src}" modules_install
+}
+
+esphosted_fw_build() {
+  # Build ESP firmware
+  (
+    cd "${esphosted_src}/esp_hosted_ng/esp/esp_driver"
+    cmake .
+    cd "${esphosted_src}/esp_hosted_ng/esp/esp_driver/esp-idf"
+    . ./export.sh
+    cd "${esphosted_src}/esp_hosted_ng/esp/esp_driver/network_adapter"
+    idf.py set-target esp32
+    idf.py build
+  )
+}
+
+esphosted_fw_install() {
+  # Copy firmware files to rootfs
+  mkdir -p "${rootfs}/lib/firmware/espressif/"
+  cp -v "${esphosted_src}/esp_hosted_ng/esp/esp_driver/network_adapter/build/"{bootloader/bootloader.bin,partition_table/partition-table.bin,ota_data_initial.bin,network_adapter.bin} "${rootfs}/lib/firmware/espressif/"
+}
+
+alpine_fetch() {
+  # Download apk.static
+  wget "https://gitlab.alpinelinux.org/api/v4/projects/5/packages/generic/v2.14.6/$(arch)/apk.static" -O "$alpine_apk"
+  chmod +x "$alpine_apk"
+}
+
+alpine_install() {
+  # Install Alpine base and libgpiod
+  "$alpine_apk" --arch "${ALPINE_ARCH}" -X "http://dl-cdn.alpinelinux.org/alpine/v${ALPINE_VERSION}/main/" -X "http://dl-cdn.alpinelinux.org/alpine/v${ALPINE_VERSION}/community/" -U --allow-untrusted --root "${rootfs}" --initdb add alpine-base libgpiod
+}
+
+alpine_overlay_install() {
+  # Copy overlay files to rootfs
+  cp -r "${OVERLAY_DIR}/." "${rootfs}/"
+}
+
+alpine_setup() {
+  # Update extlinux.conf with root UUID and kernel version
+  sed -i -e "s/%PARTUUID%/$root_uuid/g" -e "s/%KERNEL_VERSION%/$KERNEL_VERSION_NAME/g" "${rootfs}/boot/extlinux/extlinux.conf"
+  # Update fstab with root UUID
+  sed -i -e "s/%PARTUUID%/$root_uuid/g" "${rootfs}/etc/fstab"
+  # Update repositories with Alpine version
+  sed -i -e "s/%ALPINE_VERSION%/v$ALPINE_VERSION/g" "${rootfs}/etc/apk/repositories"
+
+  # Enable services
+  ln -s /etc/init.d/boot "${rootfs}/etc/runlevels/boot/"
+  ln -s /etc/init.d/crond "${rootfs}/etc/runlevels/default/"
+  ln -s /etc/init.d/devfs "${rootfs}/etc/runlevels/sysinit/"
+  ln -s /etc/init.d/dmesg "${rootfs}/etc/runlevels/sysinit/"
+  ln -s /etc/init.d/hostname "${rootfs}/etc/runlevels/boot/"
+  ln -s /etc/init.d/hwclock "${rootfs}/etc/runlevels/boot/"
+  ln -s /etc/init.d/hwdrivers "${rootfs}/etc/runlevels/sysinit/"
+  ln -s /etc/init.d/killprocs "${rootfs}/etc/runlevels/shutdown/"
+  ln -s /etc/init.d/mdev "${rootfs}/etc/runlevels/sysinit/"
+  ln -s /etc/init.d/modules "${rootfs}/etc/runlevels/boot/"
+  ln -s /etc/init.d/mount-ro "${rootfs}/etc/runlevels/shutdown/"
+  ln -s /etc/init.d/networking "${rootfs}/etc/runlevels/boot/"
+  ln -s /etc/init.d/savecache "${rootfs}/etc/runlevels/shutdown/"
+  ln -s /etc/init.d/seedrng "${rootfs}/etc/runlevels/boot/"
+  ln -s /etc/init.d/swap "${rootfs}/etc/runlevels/boot/"
+  ln -s /etc/init.d/esphosted "${rootfs}/etc/runlevels/boot/"
+}
+
+genimage_package() {
+  mkdir -p "${WORKDIR}/images"
+  sed -e "s/%PARTUUID%/$root_uuid/g" -e "s/%ALPINE_VERSION%/$ALPINE_VERSION/g" -e "s/%ALPINE_ARCH%/$ALPINE_ARCH/g" -e "s:%ROOTFS_PATH%:$rootfs:g" "${WORKDIR}/genimage.cfg" >"${tempdir}/genimage.cfg"
+  genimage --outputpath "${WORKDIR}/images" --config "${tempdir}/genimage.cfg"
+}
+
+set -e
+
+kernel_fetch
+kernel_patch
+kernel_build
+kernel_install
+
+esphosted_fetch
+esphosted_kmod_build
+esphosted_kmod_install
+
+esphosted_fw_build
+esphosted_fw_install
+
+alpine_fetch
+alpine_install
+alpine_overlay_install
+alpine_setup
+
+genimage_package
