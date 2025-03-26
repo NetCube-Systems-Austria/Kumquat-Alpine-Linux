@@ -1,14 +1,15 @@
-From b7dc7d74e312a7b64c45f48b1528eb3092b971cc Mon Sep 17 00:00:00 2001
+From 97d073e6178fd4800a0dca781b533f7a822dad1a Mon Sep 17 00:00:00 2001
 From: Lukas Schmid <lukas.schmid@netcube.li>
 Date: Thu, 2 Jan 2025 15:49:58 +0100
-Subject: [PATCH v6 2/4] dt-bindings: arm: sunxi: Add NetCube Systems Kumquat
+Subject: [PATCH v9 2/4] dt-bindings: arm: sunxi: Add NetCube Systems Kumquat
  board
 
-The NetCube Systems Kumquat is an Embedded Controller based
-on the Allwinner V3s SoC. It is intended for Smart Home or
-Industrial automation without the need for a traditional PLC
+The NetCube Systems Kumquat is an Embedded Controller based on the
+Allwinner V3s SoC. It is intended for Smart Home or Industrial automation
+without the need for a traditional PLC
 
 Signed-off-by: Lukas Schmid <lukas.schmid@netcube.li>
+Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
 ---
  Documentation/devicetree/bindings/arm/sunxi.yaml | 5 +++++
  1 file changed, 5 insertions(+)
@@ -30,5 +31,5 @@ index 046536d02706..f536cdd2c1a6 100644
          items:
            - const: nextthing,chip
 -- 
-2.47.1
+2.39.5
 

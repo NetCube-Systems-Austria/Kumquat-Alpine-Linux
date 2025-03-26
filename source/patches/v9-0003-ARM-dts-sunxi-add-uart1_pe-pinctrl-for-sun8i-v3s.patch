@@ -1,10 +1,10 @@
-From b4a735dee5648fda544d187865e23342dd0b1220 Mon Sep 17 00:00:00 2001
+From c8a122eb6cf0e515eca0a09d8847f40ef90aec23 Mon Sep 17 00:00:00 2001
 From: Lukas Schmid <lukas.schmid@netcube.li>
 Date: Sat, 4 Jan 2025 14:16:24 +0100
-Subject: [PATCH v6 3/4] ARM: dts: sunxi: add uart1_pe pinctrl for sun8i-v3s
+Subject: [PATCH v9 3/4] ARM: dts: sunxi: add uart1_pe pinctrl for sun8i-v3s
 
-Added the uart1_pe_pins pinctrl for use by the NetCube
-Systems Kumquat board
+Added the uart1_pe_pins pinctrl for use by the NetCube Systems Kumquat
+board
 
 Signed-off-by: Lukas Schmid <lukas.schmid@netcube.li>
 Reviewed-by: Andre Przywara <andre.przywara@arm.com>
@@ -30,5 +30,5 @@ index 9e13c2aa8911..f909b1d4dbca 100644
  				pins = "PB0", "PB1";
  				function = "uart2";
 -- 
-2.47.1
+2.39.5
 

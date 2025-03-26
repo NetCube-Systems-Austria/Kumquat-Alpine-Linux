@@ -1,0 +1,52 @@
+name: Build and Release Kumquat Image
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-24.04-arm
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Fetch Build Info
+      id: build_info
+      run: |
+        source "./source/build.conf.sh"
+        echo "kernel_version=${KERNEL_VERSION_NAME}" >> $GITHUB_OUTPUT
+        echo "alpine_version=${ALPINE_VERSION}" >> $GITHUB_OUTPUT
+        echo "image_arch=${ALPINE_ARCH}" >> $GITHUB_OUTPUT
+
+    - name: Build Image
+      run: |
+        chmod +x run-docker.sh
+        ./run-docker.sh
+
+    - name: Create Release
+      uses: actions/create-release@v1
+      id: create_release
+      with:
+        draft: false
+        prerelease: false
+        release_name: "Alpine Linux v${{ steps.build_info.outputs.alpine_version }} with Linux v${{ steps.build_info.outputs.kernel_version }} for NetCube Systems Kumquat - Release ${{ github.run_number }}"
+        tag_name: "alpine_v${{ steps.build_info.outputs.alpine_version }}_linux_v${{ steps.build_info.outputs.kernel_version }}_${{ github.sha }}"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload Image Artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: "./source/images/alpine-kumquat-${{ steps.build_info.outputs.alpine_version }}-${{ steps.build_info.outputs.image_arch }}.img.gz"
+        asset_name: alpine-kumquat-3.21-armhf.img.gz
+        asset_content_type: application/octet-stream

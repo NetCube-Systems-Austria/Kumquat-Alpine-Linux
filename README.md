@@ -1,10 +1,11 @@
-# Kumquat Kernel Build
+# Alpine Linux for the NetCube Systems Kumquat
 
-This repository contains scripts and Docker configurations to build a custom Linux kernel and ESP hosted firmware for Alpine Linux on ARM architecture. The build process includes fetching, patching, and compiling the kernel, as well as setting up the root filesystem with necessary packages and configurations.
+This repository contains scripts and Docker configurations to build a custom Linux kernel, ESP hosted firmware and Alpine Linux rootfs for the NetCube Systems Kumquat. The build process includes fetching, patching, and compiling the kernel, as well as setting up the root filesystem with necessary packages and configurations.
 
 ## Prerequisites
 
-- Docker
+- docker
+- binfmt-misc
 
 ## Usage
 

@@ -1,11 +1,11 @@
-From 1c05e4045ed677ee962fe1e06c455d8bf3a70a03 Mon Sep 17 00:00:00 2001
+From a2beb90e0b42977124600394bb21b006f0d9aacd Mon Sep 17 00:00:00 2001
 From: Lukas Schmid <lukas.schmid@netcube.li>
 Date: Thu, 2 Jan 2025 15:49:24 +0100
-Subject: [PATCH v6 1/4] dt-bindings: vendor-prefixes: Add NetCube Systems
+Subject: [PATCH v9 1/4] dt-bindings: vendor-prefixes: Add NetCube Systems
  Austria name
 
-NetCube Systems Austria builds Embedded Systems for use in IoT, IIoT,
-or Smart Home scenarios.
+NetCube Systems Austria builds Embedded Systems for use in IoT, IIoT, or
+Smart Home scenarios.
 
 Website is still WIP, but the Links on it are active:
 https://netcubesystems.at/
@@ -17,10 +17,10 @@ Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
  1 file changed, 2 insertions(+)
 
 diff --git a/Documentation/devicetree/bindings/vendor-prefixes.yaml b/Documentation/devicetree/bindings/vendor-prefixes.yaml
-index da01616802c7..a30ed9547098 100644
+index 5079ca6ce1d1..499ab972f9d2 100644
 --- a/Documentation/devicetree/bindings/vendor-prefixes.yaml
 +++ b/Documentation/devicetree/bindings/vendor-prefixes.yaml
-@@ -1027,6 +1027,8 @@ patternProperties:
+@@ -1031,6 +1031,8 @@ patternProperties:
      description: Neofidelity Inc.
    "^neonode,.*":
      description: Neonode Inc.
@@ -30,5 +30,5 @@ index da01616802c7..a30ed9547098 100644
      description: NETGEAR
    "^netlogic,.*":
 -- 
-2.47.1
+2.39.5
 
