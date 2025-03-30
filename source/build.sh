@@ -92,6 +92,11 @@ alpine_setup() {
   sed -i -e "s/%PARTUUID%/$root_uuid/g" "${rootfs}/etc/fstab"
   sed -i -e "s/%ALPINE_VERSION%/v$ALPINE_VERSION/g" "${rootfs}/etc/apk/repositories"
 
+  dd if=/dev/zero of="${rootfs}/swapfile" bs=1M count=64
+  chmod 0600 "${rootfs}/swapfile"
+  chown 0:0 "${rootfs}/swapfile"
+  mkswap "${rootfs}/swapfile"
+
   ln -s /etc/init.d/boot "${rootfs}/etc/runlevels/boot/"
   ln -s /etc/init.d/crond "${rootfs}/etc/runlevels/default/"
   ln -s /etc/init.d/devfs "${rootfs}/etc/runlevels/sysinit/"
@@ -114,7 +119,7 @@ genimage_package() {
   mkdir -p "${WORKDIR}/images"
   sed -e "s/%PARTUUID%/$root_uuid/g" -e "s/%ALPINE_VERSION%/$ALPINE_VERSION/g" -e "s/%ALPINE_ARCH%/$ALPINE_ARCH/g" -e "s:%ROOTFS_PATH%:$rootfs:g" "${WORKDIR}/genimage.cfg" >"${tempdir}/genimage.cfg"
   genimage --outputpath "${WORKDIR}/images" --config "${tempdir}/genimage.cfg"
-  gzip "${WORKDIR}/images/alpine-kumquat-${ALPINE_VERSION}-${ALPINE_ARCH}.img"
+  gzip -f "${WORKDIR}/images/alpine-kumquat-${ALPINE_VERSION}-${ALPINE_ARCH}.img"
 }
 
 set -e

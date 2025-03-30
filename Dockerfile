@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y \
     rsync git e2fsprogs uuid-runtime genimage \ 
     gperf python3 python3-pip python3-venv cmake ninja-build \
     ccache libffi-dev dfu-util libusb-1.0-0 pv genext2fs \
-    libncurses-dev
+    libncurses-dev util-linux
 
 # Set environment variables
 ENV CROSS_COMPILE=arm-linux-gnueabihf-
