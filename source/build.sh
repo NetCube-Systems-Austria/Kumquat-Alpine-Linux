@@ -29,23 +29,24 @@ kernel_patch() {
 kernel_build() {
   cp "${WORKDIR}/defconfig" "${kernel_src}/arch/${ARCH}/configs/build_defconfig"
   make -C "${kernel_src}" build_defconfig
-  # REMOVE AFTER CONFIG
-  # make -C "${kernel_src}" menuconfig
-  # make -C "${kernel_src}" savedefconfig
-  # cp "${kernel_src}/defconfig" "${WORKDIR}/defconfig-new"
-  # END REMOVE
+  if [ -n "${CONFIG_KERNEL}" ]; then
+    make -C "${kernel_src}" menuconfig
+    make -C "${kernel_src}" savedefconfig
+    cp "${kernel_src}/defconfig" "${WORKDIR}/defconfig-new"
+  fi
   make -C "${kernel_src}" -j"$(nproc)"
 }
 
 kernel_install() {
-  mkdir -p "${rootfs}"
+  mkdir -p "${rootfs}" "${WORKDIR}/images/"
   make -C "${kernel_src}" -j"$(nproc)" targz-pkg
   pv "${kernel_src}/linux-${KERNEL_VERSION_NAME}-${ARCH}.tar.gz" | tar -C "${rootfs}" -xz
+  cp "${kernel_src}/linux-${KERNEL_VERSION_NAME}-${ARCH}.tar.gz" "${WORKDIR}/images/"
 }
 
 esphosted_fetch() {
   git clone https://github.com/espressif/esp-hosted.git "${esphosted_src}"
-  (cd "${esphosted_src}"; git checkout b83e0d5dfdd145e0448e3d7c3ac7e7d0b1e953c8)
+  (cd "${esphosted_src}"; git checkout 24c86389142110706fb71f7df63979f0112c7580)
 }
 
 esphosted_kmod_build() {
@@ -60,7 +61,7 @@ esphosted_kmod_install() {
 esphosted_fw_build() {
   (
     cd "${esphosted_src}/esp_hosted_ng/esp/esp_driver"
-    cmake .
+    ./setup.sh
     cd "${esphosted_src}/esp_hosted_ng/esp/esp_driver/esp-idf"
     . ./export.sh
     cd "${esphosted_src}/esp_hosted_ng/esp/esp_driver/network_adapter"
@@ -125,7 +126,7 @@ genimage_package() {
 set -e
 
 kernel_fetch
-kernel_patch
+#kernel_patch
 kernel_build
 kernel_install
 
