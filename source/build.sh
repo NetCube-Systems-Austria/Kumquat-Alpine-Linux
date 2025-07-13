@@ -126,7 +126,7 @@ genimage_package() {
 set -e
 
 kernel_fetch
-#kernel_patch
+kernel_patch
 kernel_build
 kernel_install
 
