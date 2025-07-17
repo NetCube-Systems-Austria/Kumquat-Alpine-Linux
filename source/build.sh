@@ -113,7 +113,6 @@ alpine_setup() {
   ln -s /etc/init.d/savecache "${rootfs}/etc/runlevels/shutdown/"
   ln -s /etc/init.d/seedrng "${rootfs}/etc/runlevels/boot/"
   ln -s /etc/init.d/swap "${rootfs}/etc/runlevels/boot/"
-  ln -s /etc/init.d/esphosted "${rootfs}/etc/runlevels/boot/"
 }
 
 genimage_package() {
