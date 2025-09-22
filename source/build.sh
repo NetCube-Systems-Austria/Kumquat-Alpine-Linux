@@ -3,12 +3,14 @@
 WORKDIR="/workdir"
 PATCHES_DIR="${WORKDIR}/patches"
 OVERLAY_DIR="${WORKDIR}/overlay"
+FIRMWARE_DIR="${WORKDIR}/firmware"
 
 source "${WORKDIR}/build.conf.sh"
 
 tempdir=$(mktemp -d -t build-XXXXXX)
 rootfs="${tempdir}/rootfs"
 kernel_src="${tempdir}/linux-${KERNEL_VERSION_NAME}"
+firmware="${tempdir}/firmware"
 esphosted_src="${tempdir}/esphosted"
 alpine_apk="${tempdir}/apk"
 root_uuid="$(uuidgen)"
@@ -27,6 +29,7 @@ kernel_patch() {
 }
 
 kernel_build() {
+  cp -r "$FIRMWARE_DIR" "$firmware"
   cp "${WORKDIR}/defconfig" "${kernel_src}/arch/${ARCH}/configs/build_defconfig"
   make -C "${kernel_src}" build_defconfig
   if [ -n "${CONFIG_KERNEL}" ]; then
