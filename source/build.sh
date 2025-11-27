@@ -7,7 +7,7 @@ FIRMWARE_DIR="${WORKDIR}/firmware"
 
 source "${WORKDIR}/build.conf.sh"
 
-tempdir=$(mktemp -d -t build-XXXXXX)
+tempdir="/tmpdir" #$(mktemp -d -t build-XXXXXX)
 rootfs="${tempdir}/rootfs"
 kernel_src="${tempdir}/linux-${KERNEL_VERSION_NAME}"
 firmware="${tempdir}/firmware"
